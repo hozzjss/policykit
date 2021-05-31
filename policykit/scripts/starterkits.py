@@ -580,16 +580,17 @@ import datetime
 import math
 def hasVoterRole(user):
 	return user.has_role('Democracy: Voter')
-voter_users = list(filter(hasVoterRole, users))
+# voter_users = list(filter(hasVoterRole, users))
+voter_users = users
 yes_votes = action.proposal.get_yes_votes(users=voter_users)
-
-if len(yes_votes) >= math.ceil(voter_users.count()/2):
+debug(f'yes votes are {len(yes_votes)}')
+if len(yes_votes) >= 1:
     return PASSED
 elif action.proposal.get_time_elapsed() > datetime.timedelta(days=1):
     return FAILED
                                                            """,
     notify="""
-action.community.initiate_vote(action, policy, users, template='Please vote on proposal')
+action.community.notify_action(action, policy, users, template='Please vote on proposal', channel=846398942119329862)
                                                            """,
     success="pass",
     fail="pass",
