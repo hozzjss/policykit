@@ -527,7 +527,7 @@ class ConstitutionAction(BaseAction, PolymorphicModel):
         """
         Saves the action. If new, checks it against current passed policies. Note: Only meant for internal use.
         """
-        if self.shouldCreate():
+        if not self.pk:
             if self.data is None:
                 self.data = DataStore.objects.create()
 
