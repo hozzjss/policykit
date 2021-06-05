@@ -792,7 +792,7 @@ class PolicykitRemoveUserRole(ConstitutionAction):
     ready = False
 
     def __str__(self):
-        if self.role:
+        if self.role and len(self.users.all()) > 0:
             return "Remove User: " + str(self.users.all()[0]) + " from Role: " + self.role.role_name
         else:
             return "Remove User from Role: [ERROR: role not found]"
