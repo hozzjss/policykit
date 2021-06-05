@@ -763,7 +763,7 @@ class PolicykitAddUserRole(ConstitutionAction):
     ready = False
 
     def __str__(self):
-        if self.role:
+        if self.role and len(self.users.all()) > 0:
             return "Add User: " + str(self.users.all()[0]) + " to Role: " + self.role.role_name
         else:
             return "Add User to Role: [ERROR: role not found]"
