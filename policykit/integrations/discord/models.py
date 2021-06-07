@@ -61,9 +61,9 @@ class DiscordCommunity(CommunityPlatform):
     def post_message(self, text, channel):
         return self.make_call(f'channels/{channel}/messages', values={'content': text}, method="POST")
 
-    def react_to_message(self, community, channel_id, message_id, reaction):
+    def react_to_message(self, channel_id, message_id, reaction):
         from integrations.discord import views
-        views.react_to_message(community, channel_id, message_id, reaction)
+        views.react_to_message(self, channel_id, message_id, reaction)
 
     def save(self, *args, **kwargs):
         super(DiscordCommunity, self).save(*args, **kwargs)
