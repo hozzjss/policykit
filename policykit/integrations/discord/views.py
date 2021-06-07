@@ -486,7 +486,10 @@ def initiate_action_vote(policy, action, users=None, template=None, channel=None
         action.community_post = res['id']
         action.save()
 
-    time.sleep(1)
-    policy.community.make_call(f'channels/{channel_id}/messages/{res["id"]}/reactions/%F0%9F%91%8D/@me', method="PUT")
-    time.sleep(1)
-    policy.community.make_call(f'channels/{channel_id}/messages/{res["id"]}/reactions/%F0%9F%91%8E/@me', method="PUT")
+def react_to_message(community, channel_id, message_id, reaction):
+    reaction_code = str(reaction.encode('utf-8')) \
+        .replace("\\x", "%") \
+        .replace('b\'', '') \
+        .replace("'", "") \
+        .upper()
+    community.make_call(f'channels/{channel_id}/messages/{message_id}/reactions/{reaction_code}/@me', method="PUT")
