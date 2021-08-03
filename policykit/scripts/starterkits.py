@@ -590,7 +590,18 @@ elif action.proposal.get_time_elapsed() > datetime.timedelta(days=1):
     return FAILED
                                                            """,
     notify="""
-action.community.notify_action(action, policy, users, template='Please vote on proposal', channel=846398942119329862)
+import time
+
+action.community.notify_action(action, policy, users, template='Please vote on proposal', channel='testing-channel')
+
+time.sleep(1)
+
+action.community.react_to_message('testing-channel', action.community_post, '👍')
+
+time.sleep(1)
+
+action.community.react_to_message('testing-channel', action.community_post, '👎')
+
                                                            """,
     success="pass",
     fail="pass",

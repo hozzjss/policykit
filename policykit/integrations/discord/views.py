@@ -470,8 +470,12 @@ def initiate_action_vote(policy, action, users=None, template=None, channel=None
     # Here, we must check whether the user entered a valid channel_id. If not,
     # we check if the user entered a valid channel_name.
     channel_id = None
-    c = DiscordChannel.objects.filter(channel_id=channel)
-    if c.exists():
+    c = None
+    try:
+        c = DiscordChannel.objects.filter(channel_id=channel)
+    except:
+        pass
+    if c and c.exists():
         channel_id = c[0].channel_id
     else:
         c = DiscordChannel.objects.filter(guild_id=policy.community.team_id, channel_name=channel)
@@ -486,7 +490,21 @@ def initiate_action_vote(policy, action, users=None, template=None, channel=None
         action.community_post = res['id']
         action.save()
 
-def react_to_message(community, channel_id, message_id, reaction):
+def react_to_message(community: DiscordCommunity, channel, message_id, reaction):
+    channel_id = None
+    c = None
+    try:
+        c = DiscordChannel.objects.filter(channel_id=channel)
+    except:
+        pass
+    if c and c.exists():
+        channel_id = c[0].channel_id
+    else:
+        c = DiscordChannel.objects.filter(guild_id=community.team_id, channel_name=channel)
+        if c.exists():
+            channel_id = c[0].channel_id
+    if channel_id == None:
+        return
     reaction_code = str(reaction.encode('utf-8')) \
         .replace("\\x", "%") \
         .replace('b\'', '') \
