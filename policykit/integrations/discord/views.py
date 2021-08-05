@@ -411,10 +411,16 @@ def oauth(request):
             )
             user_group.community = community
             user_group.save()
-
+            done_downloading = False
+            guild_members = []
+            limit = 1000
+            after = "0"
             # Get the list of users and create a DiscordUser object for each user
-            guild_members = community.make_call(f'guilds/{guild_id}/members?limit=1000')
-
+            while not done_downloading:
+                result = community.make_call(f'guilds/{guild_id}/members?after={after}&limit={1000}')
+                guild_members = guild_members + result
+                after = guild_members[-1]['user']['id']
+                done_downloading = len(result) < limit
             owner_id = guild_info['owner_id']
             for member in guild_members:
                 user, _ = DiscordUser.objects.get_or_create(
