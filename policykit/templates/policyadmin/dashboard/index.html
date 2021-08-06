@@ -492,8 +492,8 @@
 
   {% for key, value in docs.items %}
     document.getElementById("document_{{key}}").addEventListener("click", function(){ showModal('doc', {
-      name: `{{value.name}}`,
-      text: `{{value.text}}`
+      name: `{{value.name|escapejs}}`,
+      text: `{{value.text|escapejs}}`
     }); });
   {% endfor %}
 
