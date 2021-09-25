@@ -33,7 +33,8 @@ class DiscordBackend(BaseBackend):
             discord_user.password = access_token
             discord_user.community = community
             discord_user.readable_name = user_info['username']
-            discord_user.avatar = f"https://cdn.discordapp.com/avatars/{user_info['id']}/{user_info['avatar']}.png"
+
+            discord_user.avatar = user_info['avatar'] and f"https://cdn.discordapp.com/avatars/{user_info['id']}/{user_info['avatar']}.png"
             discord_user.save()
         else:
             discord_user,_ = DiscordUser.objects.get_or_create(
@@ -41,7 +42,7 @@ class DiscordBackend(BaseBackend):
                 password = access_token,
                 community = community,
                 readable_name = user_info['username'],
-                avatar = f"https://cdn.discordapp.com/avatars/{user_info['id']}/{user_info['avatar']}.png",
+                avatar = user_info['avatar'] and f"https://cdn.discordapp.com/avatars/{user_info['id']}/{user_info['avatar']}.png",
             )
         return discord_user
 
