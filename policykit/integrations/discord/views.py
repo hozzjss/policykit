@@ -181,7 +181,7 @@ def handle_channel_update_event(data):
     action.initiator = u
 
     channel = DiscordChannel.objects.filter(channel_id=data['id'])[0]
-    logger.info(f'Channel {channel.channel_name} renamed to {action.name}')
+    logger.info(f'Channel {channel.channel_name} renamed to {action.name}'.encode('utf-8'))
 
     # Update DiscordChannel object
     channel.channel_name = action.name
