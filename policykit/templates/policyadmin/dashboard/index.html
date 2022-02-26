@@ -1,9 +1,12 @@
-{% extends "./dashboard_base.html" %}
-{% load static %}
-
-{% block styles %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/theme/eclipse.min.css" />
+{% extends "./dashboard_base.html" %} {% load static %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/theme/eclipse.min.css"
+/>
 
 <style>
   .body {
@@ -35,7 +38,7 @@
     padding: 10px 30px;
     background-color: #ffffff;
     outline: none;
-    font-family: 'Nunito', sans-serif;
+    font-family: "Nunito", sans-serif;
     font-size: 1.5em;
   }
 
@@ -47,7 +50,7 @@
     border-radius: 20px;
     background-color: #4451b2;
     color: #ffffff;
-    font-family: 'Nunito', sans-serif;
+    font-family: "Nunito", sans-serif;
     font-size: 1.5em;
     outline: none;
   }
@@ -67,7 +70,7 @@
   }
 
   .sidebarPanelTitle {
-    font-family: 'Nunito', sans-serif;
+    font-family: "Nunito", sans-serif;
     font-size: 1.5em;
     padding: 1em 0 0.5em 2vw;
   }
@@ -85,7 +88,7 @@
   }
 
   .sidebarItem {
-    font-family: 'Nunito', sans-serif;
+    font-family: "Nunito", sans-serif;
     font-size: 1em;
     color: #333333;
     cursor: pointer;
@@ -102,7 +105,7 @@
   }
 
   .actionPanelTitle {
-    font-family: 'Nunito', sans-serif;
+    font-family: "Nunito", sans-serif;
     font-size: 1.5em;
     padding: 1em 0 0.5em 2vw;
   }
@@ -123,8 +126,8 @@
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgb(0,0,0);
-    background-color: rgba(0,0,0,0.4);
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
   }
 
   .modal-content {
@@ -167,7 +170,7 @@
     padding: 0.5em 2vw;
     margin-right: 0.4vw;
     border: 1px solid #4451b2;
-    font-family: 'Nunito', sans-serif;
+    font-family: "Nunito", sans-serif;
     font-size: 1.2em;
     background-color: #ffffff;
     color: #4451b2;
@@ -183,7 +186,7 @@
   }
 
   .control-label {
-    font-family: 'Nunito', sans-serif;
+    font-family: "Nunito", sans-serif;
     font-size: 1.2em;
     color: #373456;
   }
@@ -208,9 +211,7 @@
     background-color: #ffffff !important;
   }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="body">
   <div class="leftCol">
     <!--<input type="text" class="searchBar" placeholder="Search">-->
@@ -219,16 +220,16 @@
       <div class="actionPanelContent">
         <table class="table table-hover">
           <tbody>
-              {% for action in pending_actions %}
-                <tr class="sidebarItem">
-                  <td>{{action|capfirst}} by {{action.initiator}}</td>
-                  <td>{{action.proposal.proposal_time|timesince}} ago</td>
-                </tr>
-              {% empty %}
-                <tr class="sidebarItem">
-                  <td>No pending actions.</td>
-                </tr>
-              {% endfor %}
+            {% for action in pending_actions %}
+            <tr class="sidebarItem">
+              <td>{{action|capfirst}} by {{action.initiator}}</td>
+              <td>{{action.proposal.proposal_time|timesince}} ago</td>
+            </tr>
+            {% empty %}
+            <tr class="sidebarItem">
+              <td>No pending actions.</td>
+            </tr>
+            {% endfor %}
           </tbody>
         </table>
       </div>
@@ -240,14 +241,16 @@
         <table class="table table-hover">
           <tbody>
             {% for action in action_log %}
-              <tr class="sidebarItem">
-                <td>{{action.actor|capfirst}} {{action.verb|default_if_none:""}}</td>
-                <td>{{action.timesince}} ago</td>
-              </tr>
+            <tr class="sidebarItem">
+              <td>
+                {{action.actor|capfirst}} {{action.verb|default_if_none:""}}
+              </td>
+              <td>{{action.timesince}} ago</td>
+            </tr>
             {% empty %}
-              <tr class="sidebarItem">
-                <td>No recent actions.</td>
-              </tr>
+            <tr class="sidebarItem">
+              <td>No recent actions.</td>
+            </tr>
             {% endfor %}
           </tbody>
         </table>
@@ -256,110 +259,91 @@
   </div>
 
   <div class="rightCol">
-    <input type="button" class="proposeButton" value="Propose action" id="proposeAction">
+    <input
+      type="button"
+      class="proposeButton"
+      value="Propose action"
+      id="proposeAction"
+    />
 
     <div class="sidebarPanel">
       <h4 class="sidebarPanelTitle">Users</h4>
       <div class="sidebarPanelContent">
-          <table class="table table-hover">
-            <tbody>
-              {% for key, value in users.items %}
-                <tr class="sidebarItem">
-                  <td>
-                    {% if value.avatar %}
-                      <img class="sidebarPicture" src="{{value.avatar}}">
-                    {% else %}
-                      <img class="sidebarPicture" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp">
-                    {% endif %}
-                  </td>
-                  <td>{{value.readable_name}}</td>
-                  <td>
-                    {% for r in value.roles %}
-                      {% if forloop.last %}
-                        {{r.name}}
-                      {% else %}
-                        {{r.name}},
-                      {% endif %}
-                    {% endfor %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-hover">
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="sidebarPanel">
       <h4 class="sidebarPanelTitle">Roles</h4>
       <div class="sidebarPanelContent">
-          <table class="table table-hover">
-            <tbody>
-              {% for key, value in roles.items %}
-                <tr class="sidebarItem">
-                  <td>{{key}}</td>
-                  <td>
-                    {% if value.users|length == 1 %}
-                      {{value.users.0.username}}
-                    {% elif value.users|length == 2 %}
-                      {{value.users.0.username}} and {{value.users.1.username}}
-                    {% elif value.users|length >= 3 %}
-                      {{value.users.0.username}}, {{value.users.1.username}} and {{value.users|length|add:"-2"}} more...
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-hover">
+          <tbody>
+            {% for key, value in roles.items %}
+            <tr class="sidebarItem">
+              <td>{{key}}</td>
+              <td>
+                {% if value.users|length == 1 %} {{value.users.0.username}} {%
+                elif value.users|length == 2 %} {{value.users.0.username}} and
+                {{value.users.1.username}} {% elif value.users|length >= 3 %}
+                {{value.users.0.username}}, {{value.users.1.username}} and
+                {{value.users|length|add:"-2"}} more... {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="sidebarPanel">
       <h4 class="sidebarPanelTitle">Community documents</h4>
       <div class="sidebarPanelContent">
-          <table class="table table-hover">
-            <tbody>
-              {% for key, value in docs.items %}
-                <tr id="document_{{key}}" class="sidebarItem">
-                  <td>{{value.name}}</td>
-                </tr>
-              {% empty %}
-                <tr class="sidebarItem">
-                  <td>No documents.</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-hover">
+          <tbody>
+            {% for key, value in docs.items %}
+            <tr id="document_{{key}}" class="sidebarItem">
+              <td>{{value.name}}</td>
+            </tr>
+            {% empty %}
+            <tr class="sidebarItem">
+              <td>No documents.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="sidebarPanel">
       <h4 class="sidebarPanelTitle">Platform policies</h4>
       <div class="sidebarPanelContent">
-          <table class="table table-hover">
-            <tbody>
-              {% for key, value in platform_policies.items %}
-                <tr id="platform_{{key}}" class="sidebarItem">
-                  <td>{{value.name}}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-hover">
+          <tbody>
+            {% for key, value in platform_policies.items %}
+            <tr id="platform_{{key}}" class="sidebarItem">
+              <td>{{value.name}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="sidebarPanel">
       <h4 class="sidebarPanelTitle">Constitution policies</h4>
       <div class="sidebarPanelContent">
-          <table class="table table-hover">
-            <tbody>
-              {% for key, value in constitution_policies.items %}
-                <tr id="constitution_{{key}}" class="sidebarItem">
-                  <td>{{value.name}}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-hover">
+          <tbody>
+            {% for key, value in constitution_policies.items %}
+            <tr id="constitution_{{key}}" class="sidebarItem">
+              <td>{{value.name}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -371,14 +355,19 @@
     <div class="form-row">
       <label class="control-label col-sm-2" for="doc_name">Name:</label>
       <div class="col-sm-10">
-        <input type="text" class="form-control name" id="doc_name" readonly>
+        <input type="text" class="form-control name" id="doc_name" readonly />
       </div>
     </div>
 
     <div class="form-row">
       <label class="control-label col-sm-2" for="doc_text">Text:</label>
       <div class="col-sm-10">
-        <textarea class="form-control description" id="doc_text" readonly rows="10"></textarea>
+        <textarea
+          class="form-control description"
+          id="doc_text"
+          readonly
+          rows="10"
+        ></textarea>
       </div>
     </div>
   </div>
@@ -391,56 +380,93 @@
     <div class="form-row">
       <label class="control-label col-sm-2" for="name">Name:</label>
       <div class="col-sm-10">
-        <input type="text" class="form-control name" id="name" readonly>
+        <input type="text" class="form-control name" id="name" readonly />
       </div>
     </div>
 
     <div class="form-row">
-      <label class="control-label col-sm-2" for="description">Description:</label>
+      <label class="control-label col-sm-2" for="description"
+        >Description:</label
+      >
       <div class="col-sm-10">
-        <textarea class="form-control description" id="description" readonly rows="6"></textarea>
+        <textarea
+          class="form-control description"
+          id="description"
+          readonly
+          rows="6"
+        ></textarea>
       </div>
     </div>
 
     <div class="form-row">
       <label class="control-label col-sm-2" for="filter">Filter:</label>
       <div class="col-sm-10">
-        <textarea class="form-control code" id="filter" readonly rows="3"></textarea>
+        <textarea
+          class="form-control code"
+          id="filter"
+          readonly
+          rows="3"
+        ></textarea>
       </div>
     </div>
 
     <div class="form-row">
       <label class="control-label col-sm-2" for="initialize">Initialize:</label>
       <div class="col-sm-10">
-        <textarea class="form-control code" id="initialize" readonly rows="3"></textarea>
+        <textarea
+          class="form-control code"
+          id="initialize"
+          readonly
+          rows="3"
+        ></textarea>
       </div>
     </div>
 
     <div class="form-row">
       <label class="control-label col-sm-2" for="notify">Notify:</label>
       <div class="col-sm-10">
-        <textarea class="form-control code" id="notify" readonly rows="3"></textarea>
+        <textarea
+          class="form-control code"
+          id="notify"
+          readonly
+          rows="3"
+        ></textarea>
       </div>
     </div>
 
     <div class="form-row">
       <label class="control-label col-sm-2" for="check">Check:</label>
       <div class="col-sm-10">
-        <textarea class="form-control code" id="check" readonly rows="3"></textarea>
+        <textarea
+          class="form-control code"
+          id="check"
+          readonly
+          rows="3"
+        ></textarea>
       </div>
     </div>
 
     <div class="form-row">
       <label class="control-label col-sm-2" for="pass">Pass:</label>
       <div class="col-sm-10">
-        <textarea class="form-control code" id="pass" readonly rows="3"></textarea>
+        <textarea
+          class="form-control code"
+          id="pass"
+          readonly
+          rows="3"
+        ></textarea>
       </div>
     </div>
 
     <div class="form-row">
       <label class="control-label col-sm-2" for="fail">Fail:</label>
       <div class="col-sm-10">
-        <textarea class="form-control code" id="fail" readonly rows="3"></textarea>
+        <textarea
+          class="form-control code"
+          id="fail"
+          readonly
+          rows="3"
+        ></textarea>
       </div>
     </div>
 
@@ -452,9 +478,7 @@
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/mode/python/python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/addon/display/autorefresh.min.js"></script>
