@@ -284,11 +284,13 @@
             <tr class="sidebarItem">
               <td>{{key}}</td>
               <td>
-                {% if value.users|length == 1 %} {{value.users.0.username}} {%
-                elif value.users|length == 2 %} {{value.users.0.username}} and
-                {{value.users.1.username}} {% elif value.users|length >= 3 %}
-                {{value.users.0.username}}, {{value.users.1.username}} and
-                {{value.users|length|add:"-2"}} more... {% endif %}
+                {% if value.users|length == 1 %}
+                  {{value.users.0.username}}
+                {% elif value.users|length == 2 %}
+                  {{value.users.0.username}} and {{value.users.1.username}}
+                {% elif value.users|length >= 3 %}
+                  {{value.users.0.username}}, {{value.users.1.username}} and {{value.users|length|add:"-2"}} more...
+                {% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -478,7 +480,9 @@
     </div>
   </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %} 
+
+{% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/mode/python/python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/addon/display/autorefresh.min.js"></script>
