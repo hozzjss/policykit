@@ -46,13 +46,13 @@ def v2(request):
     constitution_policies = user.community.get_constitution_policies()
 
     # Indexing entries by username/name allows retrieval in O(1) rather than O(n)
-    user_data = {}
-    for u in users:
-        user_data[u.username] = {
-            'readable_name': u.readable_name,
-            'roles': [],
-            'avatar': u.avatar
-        }
+    # user_data = {}
+    # for u in users:
+    #     user_data[u.username] = {
+    #         'readable_name': u.readable_name,
+    #         'roles': [],
+    #         'avatar': u.avatar
+    #     }
 
     role_data = {}
     for r in roles:
@@ -66,7 +66,7 @@ def v2(request):
         for u in r.user_set.all():
             cu = u.communityuser
             role_data[r.role_name]['users'].append({ 'username': cu.readable_name })
-            user_data[cu.username]['roles'].append({ 'name': r.role_name })
+            # user_data[cu.username]['roles'].append({ 'name': r.role_name })
 
     doc_data = {}
     for d in docs:
@@ -112,7 +112,7 @@ def v2(request):
     return render(request, 'policyadmin/dashboard/index.html', {
         'server_url': SERVER_URL,
         'user': user,
-        'users': user_data,
+        # 'users': user_data,
         'roles': role_data,
         'docs': doc_data,
         'platform_policies': platform_policy_data,
