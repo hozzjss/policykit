@@ -393,7 +393,7 @@ def oauth(request):
         req = urllib.request.Request('https://discordapp.com/api/guilds/%s' % guild_id)
         req.add_header("Content-Type", "application/json")
         req.add_header('Authorization', 'Bot %s' % DISCORD_BOT_TOKEN)
-        req.add_header("User-Agent", "Mozilla/5.0")
+        req.add_header("User-Agent", "DiscordBot ($url, $versionNumber)")
         resp = urllib.request.urlopen(req)
         guild_info = json.loads(resp.read().decode('utf-8'))
 
