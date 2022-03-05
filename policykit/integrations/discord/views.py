@@ -126,6 +126,7 @@ def discord_install(request):
         )
 
         # Get the list of users and create a DiscordUser object for each user
+        import time
         done_downloading = False
         guild_members = []
         limit = 1000
@@ -136,6 +137,7 @@ def discord_install(request):
             guild_members = guild_members + result
             after = guild_members[-1]['user']['id']
             done_downloading = len(result) < limit
+            time.sleep(2)
         owner_id = guild_info["owner_id"]
         creator_user = None
         for member in guild_members:
