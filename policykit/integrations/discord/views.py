@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import login, authenticate
 from django.views.decorators.csrf import csrf_exempt
-from policykit.settings import SERVER_URL, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN
+from policykit.settings import SERVER_URL, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN, ALLOWED_CHANNELS
 from policyengine.models import *
 from integrations.discord.models import *
 from urllib import parse
@@ -65,6 +65,11 @@ def should_create_action(message, type=None):
     if type == None:
         logger.error('type parameter not specified in should_create_action')
         return False
+
+
+    if not str(message["channel_id"]) in ALLOWED_CHANNELS:
+        logger.debug("ignoring message")
+        return
 
     created_at = None
 
