@@ -330,9 +330,11 @@ def on_message(wsapp, message):
 
 def on_error(wsapp, error):
     logger.error(f'Websocket error: {error}')
+    connect_gateway()
 
 def on_close(wsapp, code, reason):
     logger.error(f'Connection to Discord gateway closed with error code {code}')
+    connect_gateway()
 
 # Open gateway connection
 def connect_gateway():
