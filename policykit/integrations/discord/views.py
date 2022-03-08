@@ -25,7 +25,7 @@ EMOJI_LIKE = '👍'
 EMOJI_DISLIKE = '👎'
 
 
-GATEWAY_VERSION = 8
+GATEWAY_VERSION = 9
 
 session_id = None
 heartbeat_interval = None
@@ -328,13 +328,11 @@ def on_message(wsapp, message):
     elif op == 11: # Opcode 11 Heartbeat ACK
         ack_received = True
 
-def on_error(wsapp, error):
+def on_error(wsapp: websocket.WebSocketApp, error):
     logger.error(f'Websocket error: {error}')
-    connect_gateway()
 
 def on_close(wsapp, code, reason):
     logger.error(f'Connection to Discord gateway closed with error code {code}')
-    connect_gateway()
 
 # Open gateway connection
 def connect_gateway():
