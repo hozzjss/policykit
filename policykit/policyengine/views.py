@@ -259,7 +259,6 @@ def editor(request):
     }
     def escapeEscapedCharacters(code: str):
         result = code.replace("\\", "\\\\")
-        logger.info(result)
         return result
 
     if policy_id:
