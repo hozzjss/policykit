@@ -257,6 +257,10 @@ def editor(request):
         'type': type,
         'operation': operation
     }
+    def escapeEscapedCharacters(code: str):
+        result = code.replace("\\", "\\\\")
+        logger.info(result)
+        return result
 
     if policy_id:
         from policyengine.models import Policy
@@ -269,12 +273,12 @@ def editor(request):
         data['policy'] = policy_id
         data['name'] = policy.name
         data['description'] = policy.description
-        data['filter'] = policy.filter
-        data['initialize'] = policy.initialize
-        data['check'] = policy.check
-        data['notify'] = policy.notify
-        data['success'] = policy.success
-        data['fail'] = policy.fail
+        data['filter'] = escapeEscapedCharacters(policy.filter)
+        data['initialize'] = escapeEscapedCharacters(policy.initialize)
+        data['check'] = escapeEscapedCharacters(policy.check)
+        data['notify'] = escapeEscapedCharacters(policy.notify)
+        data['success'] = escapeEscapedCharacters(policy.success)
+        data['fail'] = escapeEscapedCharacters(policy.fail)
 
     return render(request, 'policyadmin/dashboard/editor.html', data)
 
