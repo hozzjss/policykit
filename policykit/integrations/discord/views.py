@@ -40,7 +40,7 @@ def get_gateway_uri():
     res = json.loads(resp.read().decode('utf-8'))
     return res['url']
 
-def on_open(wsapp):
+def on_open(wsapp: websocket.WebSocketApp):
     def run(*args):
         global heartbeat_interval, ack_received, sequence_number
         while True:
@@ -50,12 +50,15 @@ def on_open(wsapp):
                 # Verify that client received heartbeat ack between attempts at sending heartbeats
                 #if ack_received == False:
                 #    wsapp.close(status=1002)
-
                 payload = json.dumps({
                     'op': 1,
                     'd': sequence_number
                 })
-                wsapp.send(payload)
+                try:
+                    wsapp.send(payload)
+                except websocket._exceptions.WebSocketConnectionClosedException:
+                    connect_gateway()
+                    
 
     rt = threading.Thread(target=run)
     rt.daemon = True
@@ -323,16 +326,29 @@ def on_message(wsapp, message):
                 'compress': False
             }
         })
+        if session_id:
+            payload = json.dumps({
+                "op": 6,
+                "d": {
+                    "token": DISCORD_BOT_TOKEN,
+                    "session_id": session_id,
+                    "seq": sequence_number
+                }
+            })
+        
         wsapp.send(payload)
-        logger.info('Sent an Opcode 2 Identify to the Discord gateway')
+        logger.info(f'Sent an Opcode {6 if session_id else 2} Identify to the Discord gateway')
     elif op == 11: # Opcode 11 Heartbeat ACK
         ack_received = True
 
 def on_error(wsapp: websocket.WebSocketApp, error):
     logger.error(f'Websocket error: {error}')
+    
 
 def on_close(wsapp, code, reason):
     logger.error(f'Connection to Discord gateway closed with error code {code}')
+    connect_gateway()
+    
 
 # Open gateway connection
 def connect_gateway():

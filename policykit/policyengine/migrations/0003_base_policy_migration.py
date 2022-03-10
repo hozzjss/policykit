@@ -9,7 +9,7 @@ import datetime
 
 
 dirname = f"downloaded_policies_{datetime.datetime.now().isoformat()}"
-os.mkdir(dirname)
+# os.mkdir(dirname)
 
 def download(policy):
     filename = str(policy.community) + "_" + policy.name
