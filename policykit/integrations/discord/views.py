@@ -54,10 +54,10 @@ def on_open(wsapp: websocket.WebSocketApp):
                     'op': 1,
                     'd': sequence_number
                 })
-                try:
-                    wsapp.send(payload)
-                except websocket._exceptions.WebSocketConnectionClosedException:
-                    connect_gateway()
+                # try:
+                wsapp.send(payload)
+                # except websocket._exceptions.WebSocketConnectionClosedException:
+                #     connect_gateway()
                     
 
     rt = threading.Thread(target=run)
