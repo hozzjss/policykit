@@ -46,7 +46,7 @@ class DiscordChannel(models.Model):
     channel_name = models.TextField()
 
 class DiscordCommunity(CommunityPlatform):
-    API = 'https://discordapp.com/api/'
+    API = 'https://discord.com/api/'
     platform = "discord"
 
     team_id = models.CharField('team_id', max_length=150, unique=True)

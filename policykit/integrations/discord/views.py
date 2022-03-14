@@ -33,7 +33,7 @@ ack_received = True
 sequence_number = None
 
 def get_gateway_uri():
-    # req = urllib.request.Request('https://discordapp.com/api/gateway')
+    # req = urllib.request.Request('https://discord.com/api/gateway')
     # req.add_header("Content-Type", "application/x-www-form-urlencoded")
     # req.add_header("User-Agent", "Mozilla/5.0") # yes, this is strange. discord requires it when using urllib for some weird reason
     # resp = urllib.request.urlopen(req)
@@ -381,7 +381,7 @@ def oauth(request):
         'redirect_uri': SERVER_URL + '/discord/oauth'
     }).encode()
 
-    req = urllib.request.Request('https://discordapp.com/api/oauth2/token', data=data)
+    req = urllib.request.Request('https://discord.com/api/oauth2/token', data=data)
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     req.add_header("User-Agent", "Mozilla/5.0")
     resp = urllib.request.urlopen(req)
@@ -411,7 +411,7 @@ def oauth(request):
             return render(request, "policyadmin/configure_discord.html", { "integrated_guilds": integrated_guilds, "access_token": access_token })
 
     elif state == 'policykit_discord_mod_install':
-        req = urllib.request.Request('https://discordapp.com/api/guilds/%s' % guild_id)
+        req = urllib.request.Request('https://discord.com/api/guilds/%s' % guild_id)
         req.add_header("Content-Type", "application/json")
         req.add_header('Authorization', 'Bot %s' % DISCORD_BOT_TOKEN)
         req.add_header("User-Agent", "DiscordBot ($url, $versionNumber)")
