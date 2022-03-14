@@ -33,12 +33,12 @@ ack_received = True
 sequence_number = None
 
 def get_gateway_uri():
-    req = urllib.request.Request('https://discordapp.com/api/gateway')
-    req.add_header("Content-Type", "application/x-www-form-urlencoded")
-    req.add_header("User-Agent", "Mozilla/5.0") # yes, this is strange. discord requires it when using urllib for some weird reason
-    resp = urllib.request.urlopen(req)
-    res = json.loads(resp.read().decode('utf-8'))
-    return res['url']
+    # req = urllib.request.Request('https://discordapp.com/api/gateway')
+    # req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    # req.add_header("User-Agent", "Mozilla/5.0") # yes, this is strange. discord requires it when using urllib for some weird reason
+    # resp = urllib.request.urlopen(req)
+    # res = json.loads(resp.read().decode('utf-8'))
+    return "wss://gateway.discord.gg/"
 
 def on_open(wsapp: websocket.WebSocketApp):
     def run(*args):
