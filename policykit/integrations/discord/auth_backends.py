@@ -19,7 +19,7 @@ class DiscordBackend(BaseBackend):
             return None
         community = community[0]
 
-        req = urllib.request.Request('https://www.discordapp.com/api/users/@me')
+        req = urllib.request.Request('https://discord.com/api/users/@me')
         req.add_header('Authorization', 'Bearer %s' % access_token)
         req.add_header("User-Agent", "Mozilla/5.0") # yes, this is strange. discord requires it when using urllib for some weird reason
         resp = urllib.request.urlopen(req)

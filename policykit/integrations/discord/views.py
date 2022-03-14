@@ -390,7 +390,7 @@ def oauth(request):
     if state == 'policykit_discord_user_login':
         access_token = res['access_token']
 
-        req = urllib.request.Request('https://www.discordapp.com/api/users/@me/guilds')
+        req = urllib.request.Request('https://discord.com/api/users/@me/guilds')
         req.add_header('Authorization', 'Bearer %s' % access_token)
         req.add_header("User-Agent", "Mozilla/5.0")
         resp = urllib.request.urlopen(req)
