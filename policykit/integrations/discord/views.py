@@ -16,7 +16,13 @@ import time
 
 logger = logging.getLogger(__name__)
 
-websocket.enableTrace(False)
+import socketio
+
+# standard Python
+sio = socketio.Client()
+
+sio.connect('http://localhost:8299')
+
 
 # Used for Boolean voting
 # EMOJI_LIKE = ['👍', '👍🏻', '👍🏼', '👍🏽', '👍🏾', '👍🏿']
@@ -243,6 +249,8 @@ def handle_channel_delete_event(data):
 
     return action
 
+
+@sio.on("*")
 def handle_event(name, data):
     if name == 'READY':
         handle_ready_event(data)
@@ -299,7 +307,10 @@ def handle_event(name, data):
                                                           boolean_value=val)
 
 
-def on_message(wsapp, message):
+
+
+
+def on_message(event, data):
     global heartbeat_interval, sequence_number, ack_received
     payload = json.loads(message)
     op = payload['op']
@@ -347,22 +358,21 @@ def on_error(wsapp: websocket.WebSocketApp, error):
 
 def on_close(wsapp, code, reason):
     logger.error(f'Connection to Discord gateway closed with error code {code}')
-    connect_gateway()
     
 
 # Open gateway connection
-def connect_gateway():
-    wsapp = websocket.WebSocketApp(f'{get_gateway_uri()}?v={GATEWAY_VERSION}&encoding=json',
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close)
-    wsapp.on_open = on_open
-    wst = threading.Thread(target=wsapp.run_forever)
-    wst.daemon = True
-    wst.start()
+# def connect_gateway():
+#     wsapp = websocket.WebSocketApp(f'http  ://localhost:8299',
+#         on_message=on_message,
+#         on_error=on_error,
+#         on_close=on_close)
+#     wsapp.on_open = on_open
+#     wst = threading.Thread(target=wsapp.run_forever)
+#     wst.daemon = True
+#     wst.start()
 
-if DISCORD_CLIENT_ID:
-    connect_gateway()
+# if DISCORD_CLIENT_ID:
+#     connect_gateway()
 
 def oauth(request):
     state = request.GET.get('state')
