@@ -1,3 +1,4 @@
+import socketio
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import login, authenticate
@@ -9,11 +10,10 @@ from urllib import parse
 import urllib.request
 import json
 import logging
-import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-import socketio
 
 # standard Python
 sio = socketio.Client()
@@ -35,11 +35,11 @@ heartbeat_interval = None
 ack_received = True
 sequence_number = None
 
+
 def should_create_action(message, type=None):
     if type == None:
         logger.error('type parameter not specified in should_create_action')
         return False
-
 
     if not str(message["channel_id"]) in ALLOWED_CHANNELS:
         logger.debug("ignoring message")
@@ -54,20 +54,22 @@ def should_create_action(message, type=None):
         if DiscordPostMessage.objects.filter(message_id=message['id']).exists():
             return False
 
-        created_at = message['timestamp'] # ISO8601 timestamp
-        created_at = datetime.datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%S.%f+00:00")
+        created_at = message['timestamp']  # ISO8601 timestamp
+        created_at = datetime.strptime(
+            created_at, "%Y-%m-%dT%H:%M:%S.%f+00:00")
 
     if created_at == None:
-        logger.error("created_at is None when it shouldn't be in should_create_action")
+        logger.error(
+            "created_at is None when it shouldn't be in should_create_action")
         return False
 
-    now = datetime.datetime.now()
+    now = datetime.now()
 
     # If action is more than twice the Celery beat frequency seconds old,
     # don't create an object for it. This way, we only create objects for
     # actions taken after PolicyKit has been installed to the community.
     recent_time = 2 * settings.CELERY_BEAT_FREQUENCY
-    if now - created_at > datetime.timedelta(seconds=recent_time):
+    if now - created_at > timedelta(seconds=recent_time):
         return False
     return True
 
@@ -88,9 +90,11 @@ def handle_guild_create_event(data):
             )
     logger.info(f'Populated DiscordChannel objects from GUILD_CREATE event')
 
+
 def handle_message_create_event(data):
     if should_create_action(data, type="MESSAGE_CREATE"):
-        channel = DiscordChannel.objects.filter(channel_id=data['channel_id'])[0]
+        channel = DiscordChannel.objects.filter(
+            channel_id=data['channel_id'])[0]
         guild_id = channel.guild_id
         community = DiscordCommunity.objects.filter(team_id=guild_id)[0]
 
@@ -100,15 +104,17 @@ def handle_message_create_event(data):
         action.channel_id = data['channel_id']
         action.message_id = data['id']
 
-        u,_ = DiscordUser.objects.get_or_create(
+        u, _ = DiscordUser.objects.get_or_create(
             username=f"{data['author']['id']}:{guild_id}",
             community=community
         )
         action.initiator = u
 
-        logger.info(f'New message in channel {channel.channel_name}: {data["content"]}')
+        logger.info(
+            f'New message in channel {channel.channel_name}: {data["content"]}')
 
         return action
+
 
 def handle_message_delete_event(data):
     channel = DiscordChannel.objects.filter(channel_id=data['channel_id'])[0]
@@ -118,22 +124,25 @@ def handle_message_delete_event(data):
     # Gets the channel message
     # This doesn't work, it always returns 404. The message has already been deleted.
     # There is no way to retrieve deleted messages in Discord
-    message = community.make_call(f"channels/{data['channel_id']}/messages/{data['id']}")
+    message = community.make_call(
+        f"channels/{data['channel_id']}/messages/{data['id']}")
 
     action = DiscordDeleteMessage()
     action.community = community
     action.channel_id = data['channel_id']
     action.message_id = data['id']
 
-    u,_ = DiscordUser.objects.get_or_create(
+    u, _ = DiscordUser.objects.get_or_create(
         username=f"{message['author']['id']}:{guild_id}",
         community=community
     )
     action.initiator = u
 
-    logger.info(f'Message deleted in channel {channel.channel_name}: {message["content"]}')
+    logger.info(
+        f'Message deleted in channel {channel.channel_name}: {message["content"]}')
 
     return action
+
 
 def handle_channel_update_event(data):
     guild_id = data['guild_id']
@@ -150,20 +159,22 @@ def handle_channel_update_event(data):
     # placeholder, the Discord client ID is set as the initiator.
     # However, this is not accurate and should be changed in the future
     # if and when possible.
-    u,_ = DiscordUser.objects.get_or_create(
+    u, _ = DiscordUser.objects.get_or_create(
         username=f"{DISCORD_CLIENT_ID}:{guild_id}",
         community=community
     )
     action.initiator = u
 
     channel = DiscordChannel.objects.filter(channel_id=data['id'])[0]
-    logger.info(f'Channel {channel.channel_name} renamed to {action.name}'.encode('utf-8'))
+    logger.info(
+        f'Channel {channel.channel_name} renamed to {action.name}'.encode('utf-8'))
 
     # Update DiscordChannel object
     channel.channel_name = action.name
     channel.save()
 
     return action
+
 
 def handle_channel_create_event(data):
     guild_id = data['guild_id']
@@ -182,7 +193,7 @@ def handle_channel_create_event(data):
     action.name = data['name']
 
     # FIXME: Same issue as in handle_channel_update_event()
-    u,_ = DiscordUser.objects.get_or_create(
+    u, _ = DiscordUser.objects.get_or_create(
         username=f"{DISCORD_CLIENT_ID}:{guild_id}",
         community=community
     )
@@ -191,6 +202,7 @@ def handle_channel_create_event(data):
     logger.info(f'Channel created: {action.name}')
 
     return action
+
 
 def handle_channel_delete_event(data):
     guild_id = data['guild_id']
@@ -201,7 +213,7 @@ def handle_channel_delete_event(data):
     action.channel_id = data['id']
 
     # FIXME: Same issue as in handle_channel_update_event()
-    u,_ = DiscordUser.objects.get_or_create(
+    u, _ = DiscordUser.objects.get_or_create(
         username=f"{DISCORD_CLIENT_ID}:{guild_id}",
         community=community
     )
@@ -246,8 +258,10 @@ def handle_event(name, data):
             consider_proposed_actions()
 
         if name == 'MESSAGE_REACTION_ADD':
-            action_res = PlatformAction.objects.filter(community_post=data['message_id'])
-            action_res = action_res or ConstitutionAction.objects.filter(community_post=data['message_id'])
+            action_res = PlatformAction.objects.filter(
+                community_post=data['message_id'])
+            action_res = action_res or ConstitutionAction.objects.filter(
+                community_post=data['message_id'])
             # logger.debug(action_res.get())
             if action_res.exists():
                 action = action_res[0]
@@ -255,8 +269,9 @@ def handle_event(name, data):
                 if reaction in [EMOJI_LIKE, EMOJI_DISLIKE]:
                     val = (reaction == EMOJI_LIKE)
                     user = DiscordUser.objects.get(username=f"{data['user_id']}:{data['guild_id']}",
-                                                               community=action.community)
-                    vote = BooleanVote.objects.filter(proposal=action.proposal, user=user)
+                                                   community=action.community)
+                    vote = BooleanVote.objects.filter(
+                        proposal=action.proposal, user=user)
 
                     if vote.exists():
                         vote = vote[0]
@@ -267,8 +282,6 @@ def handle_event(name, data):
                         vote = BooleanVote.objects.create(proposal=action.proposal,
                                                           user=user,
                                                           boolean_value=val)
-
-
 
 
 def oauth(request):
@@ -288,7 +301,8 @@ def oauth(request):
         'redirect_uri': SERVER_URL + '/discord/oauth'
     }).encode()
 
-    req = urllib.request.Request('https://discord.com/api/oauth2/token', data=data)
+    req = urllib.request.Request(
+        'https://discord.com/api/oauth2/token', data=data)
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     req.add_header("User-Agent", "Mozilla/5.0")
     resp = urllib.request.urlopen(req)
@@ -297,7 +311,8 @@ def oauth(request):
     if state == 'policykit_discord_user_login':
         access_token = res['access_token']
 
-        req = urllib.request.Request('https://discord.com/api/users/@me/guilds')
+        req = urllib.request.Request(
+            'https://discord.com/api/users/@me/guilds')
         req.add_header('Authorization', 'Bearer %s' % access_token)
         req.add_header("User-Agent", "Mozilla/5.0")
         resp = urllib.request.urlopen(req)
@@ -315,10 +330,11 @@ def oauth(request):
             return auth(request, guild_id=integrated_guilds[0][0], access_token=access_token)
         else:
             # If user has more than one PK-integrated Discord guild, bring user to screen to select which guild's dashboard to login to
-            return render(request, "policyadmin/configure_discord.html", { "integrated_guilds": integrated_guilds, "access_token": access_token })
+            return render(request, "policyadmin/configure_discord.html", {"integrated_guilds": integrated_guilds, "access_token": access_token})
 
     elif state == 'policykit_discord_mod_install':
-        req = urllib.request.Request('https://discord.com/api/guilds/%s' % guild_id)
+        req = urllib.request.Request(
+            'https://discord.com/api/guilds/%s' % guild_id)
         req.add_header("Content-Type", "application/json")
         req.add_header('Authorization', 'Bot %s' % DISCORD_BOT_TOKEN)
         req.add_header("User-Agent", "DiscordBot ($url, $versionNumber)")
@@ -327,10 +343,12 @@ def oauth(request):
 
         s = DiscordCommunity.objects.filter(team_id=guild_id)
         community = None
-        user_group,_ = CommunityRole.objects.get_or_create(role_name="Base User", name="Discord: " + guild_info['name'] + ": Base User")
+        user_group, _ = CommunityRole.objects.get_or_create(
+            role_name="Base User", name="Discord: " + guild_info['name'] + ": Base User")
 
         if not s.exists():
-            parent_community = Community.objects.create(readable_name=guild_info['name'])
+            parent_community = Community.objects.create(
+                readable_name=guild_info['name'])
             community = DiscordCommunity.objects.create(
                 community_name=guild_info['name'],
                 community=parent_community,
@@ -345,7 +363,8 @@ def oauth(request):
             after = "0"
             # Get the list of users and create a DiscordUser object for each user
             while not done_downloading:
-                result = community.make_call(f'guilds/{guild_id}/members?after={after}&limit={1000}')
+                result = community.make_call(
+                    f'guilds/{guild_id}/members?after={after}&limit={1000}')
                 guild_members = guild_members + result
                 after = guild_members[-1]['user']['id']
                 done_downloading = len(result) < limit
@@ -354,7 +373,8 @@ def oauth(request):
                 user, _ = DiscordUser.objects.get_or_create(
                     username=f"{member['user']['id']}:{guild_id}",
                     readable_name=member['user']['username'],
-                    avatar= member['user']['avatar'] and f"https://cdn.discordapp.com/avatars/{member['user']['id']}/{member['user']['avatar']}.png",
+                    avatar=member['user'][
+                        'avatar'] and f"https://cdn.discordapp.com/avatars/{member['user']['id']}/{member['user']['avatar']}.png",
                     community=community,
                     is_community_admin=(member['user']['id'] == owner_id)
                 )
@@ -376,14 +396,15 @@ def oauth(request):
 
     return redirect('/login?error=no_owned_guilds_found')
 
+
 @csrf_exempt
 def auth(request, guild_id=None, access_token=None):
-    if not guild_id: # Redirected from Configure page
+    if not guild_id:  # Redirected from Configure page
         guild_id = request.POST['guild_id']
         if not guild_id:
             return redirect('/login?error=guild_id_missing')
 
-    if not access_token: # Redirected from Configure page
+    if not access_token:  # Redirected from Configure page
         access_token = request.POST['access_token']
         if not access_token:
             return redirect('/login?error=access_token_missing')
@@ -394,6 +415,7 @@ def auth(request, guild_id=None, access_token=None):
         return redirect('/main')
     else:
         return redirect('/login?error=invalid_login')
+
 
 def initiate_action_vote(policy, action, users=None, template=None, channel=None):
     message = "This action is governed by the following policy: " + policy.name
@@ -412,7 +434,8 @@ def initiate_action_vote(policy, action, users=None, template=None, channel=None
     if c and c.exists():
         channel_id = c[0].channel_id
     else:
-        c = DiscordChannel.objects.filter(guild_id=policy.community.team_id, channel_name=channel)
+        c = DiscordChannel.objects.filter(
+            guild_id=policy.community.team_id, channel_name=channel)
         if c.exists():
             channel_id = c[0].channel_id
     if channel_id == None:
@@ -424,6 +447,7 @@ def initiate_action_vote(policy, action, users=None, template=None, channel=None
         action.community_post = res['id']
         action.save()
 
+
 def react_to_message(community: DiscordCommunity, channel, message_id, reaction):
     channel_id = None
     c = None
@@ -434,7 +458,8 @@ def react_to_message(community: DiscordCommunity, channel, message_id, reaction)
     if c and c.exists():
         channel_id = c[0].channel_id
     else:
-        c = DiscordChannel.objects.filter(guild_id=community.team_id, channel_name=channel)
+        c = DiscordChannel.objects.filter(
+            guild_id=community.team_id, channel_name=channel)
         if c.exists():
             channel_id = c[0].channel_id
     if channel_id == None:
@@ -444,4 +469,5 @@ def react_to_message(community: DiscordCommunity, channel, message_id, reaction)
         .replace('b\'', '') \
         .replace("'", "") \
         .upper()
-    community.make_call(f'channels/{channel_id}/messages/{message_id}/reactions/{reaction_code}/@me', method="PUT")
+    community.make_call(
+        f'channels/{channel_id}/messages/{message_id}/reactions/{reaction_code}/@me', method="PUT")

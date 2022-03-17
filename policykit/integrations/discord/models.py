@@ -1,5 +1,7 @@
+from time import sleep
+from typing import Literal, Optional, Union
 from django.db import models
-from policyengine.models import CommunityPlatform, CommunityUser, PlatformAction, StarterKit, Policy, Proposal, CommunityRole
+from policyengine.models import BaseAction, CommunityPlatform, CommunityUser, PlatformAction, StarterKit, Policy, Proposal, CommunityRole
 from django.contrib.auth.models import Permission, ContentType
 from policykit.settings import DISCORD_BOT_TOKEN
 import requests
@@ -40,10 +42,13 @@ DISCORD_EXECUTE_PERMS = [
 
 # Storing basic info of Discord channels to prevent repeated calls to Discord
 # gateway for channel information.
+
+
 class DiscordChannel(models.Model):
     guild_id = models.BigIntegerField()
     channel_id = models.BigIntegerField()
     channel_name = models.TextField()
+
 
 class DiscordCommunity(CommunityPlatform):
     API = 'https://discord.com/api/'
@@ -69,31 +74,56 @@ class DiscordCommunity(CommunityPlatform):
         super(DiscordCommunity, self).save(*args, **kwargs)
 
         content_types = ContentType.objects.filter(model__in=DISCORD_ACTIONS)
-        perms = Permission.objects.filter(content_type__in=content_types, name__contains="can add ")
+        perms = Permission.objects.filter(
+            content_type__in=content_types, name__contains="can add ")
         for p in perms:
             self.base_role.permissions.add(p)
 
-    def make_call(self, url, values=None, action=None, method="GET"):
+    def make_call(self, url: str, values: Optional[dict[str, str]] = None,
+                  action: Optional[BaseAction] = None,
+                  method: Union[
+            Literal["GET"],
+            Literal["POST"],
+            Literal["PUT"],
+            Literal["PATCH"],
+            Literal["DELETE"]
+    ] = "GET") -> Union[dict[str, str], None]:
+        def handleRateLimiting(res: requests.Response):
+            content = res.json()
+            retry_after = content["retry_after"]
+            logger.debug(
+                f"Being rate limited will retry after {retry_after} seconds...")
+            sleep(retry_after)
+            return self.make_call(url, values, action, method)
+
         response = requests.request(
             method=method,
             url=self.API + url,
             json=values,
             headers={'Authorization': 'Bot %s' % DISCORD_BOT_TOKEN}
         )
-        logger.debug(f"Made request to {response.request.method} {response.request.url} with body {response.request.body}")
+        sleep(1)
+        logger.debug(
+            f"Made request to {response.request.method} {response.request.url} with body {response.request.body}")
 
         if not response.ok:
-            logger.error(f"{response.status_code} {response.reason} {response.text}")
-            raise Exception(f"{response.status_code} {response.reason} {response.text}")
+            logger.error(
+                f"{response.status_code} {response.reason} {response.text}")
+            if response.status_code == 429:
+                return handleRateLimiting(res)
+            raise Exception(
+                f"{response.status_code} {response.reason} {response.text}")
         if response.content:
             return response.json()
         return None
+
 
 class DiscordUser(CommunityUser):
     def save(self, *args, **kwargs):
         super(DiscordUser, self).save(*args, **kwargs)
         group = self.community.base_role
         group.user_set.add(self)
+
 
 class DiscordPostMessage(PlatformAction):
     channel_id = models.BigIntegerField()
@@ -117,11 +147,13 @@ class DiscordPostMessage(PlatformAction):
     def execute(self):
         # Execute action if it didn't originate in the community OR it was previously reverted
         if not self.community_origin or (self.community_origin and self.community_revert):
-            message = self.community.post_message(text=self.text, channel=self.channel_id)
+            message = self.community.post_message(
+                text=self.text, channel=self.channel_id)
 
             self.message_id = message['id']
             self.community_post = self.message_id
             self.save()
+
 
 class DiscordDeleteMessage(PlatformAction):
     channel_id = models.BigIntegerField()
@@ -136,22 +168,27 @@ class DiscordDeleteMessage(PlatformAction):
 
     class Meta:
         permissions = (
-            ('can_execute_discorddeletemessage', 'Can execute discord delete message'),
+            ('can_execute_discorddeletemessage',
+             'Can execute discord delete message'),
         )
 
     def revert(self):
-        super().revert({'content': self.text}, f"channels/{self.channel_id}/messages")
+        super().revert({'content': self.text},
+                       f"channels/{self.channel_id}/messages")
 
     def execute(self):
         # Execute action if it didn't originate in the community OR it was previously reverted
         if not self.community_origin or (self.community_origin and self.community_revert):
             # Gets the channel message and stores the text (in case of revert)
-            message = self.community.make_call(f"channels/{self.channel_id}/messages/{self.message_id}")
+            message = self.community.make_call(
+                f"channels/{self.channel_id}/messages/{self.message_id}")
             self.text = message['content']
             self.save()
 
             # Deletes the message
-            self.community.make_call(f"channels/{self.channel_id}/messages/{self.message_id}", method='DELETE')
+            self.community.make_call(
+                f"channels/{self.channel_id}/messages/{self.message_id}", method='DELETE')
+
 
 class DiscordRenameChannel(PlatformAction):
     channel_id = models.BigIntegerField()
@@ -166,11 +203,13 @@ class DiscordRenameChannel(PlatformAction):
 
     class Meta:
         permissions = (
-            ('can_execute_discordrenamechannel', 'Can execute discord rename channel'),
+            ('can_execute_discordrenamechannel',
+             'Can execute discord rename channel'),
         )
 
     def revert(self):
-        super().revert({'name': self.name_old}, f"channels/{self.channel_id}", method='PATCH')
+        super().revert({'name': self.name_old},
+                       f"channels/{self.channel_id}", method='PATCH')
 
         # Update DiscordChannel object
         c = DiscordChannel.objects.filter(channel_id=self.channel_id)
@@ -185,12 +224,14 @@ class DiscordRenameChannel(PlatformAction):
             self.name_old = channel['name']
 
             # Update the channel name to the new name
-            self.community.make_call(f"channels/{self.channel_id}", {'name': self.name}, method='PATCH')
+            self.community.make_call(
+                f"channels/{self.channel_id}", {'name': self.name}, method='PATCH')
 
             # Update DiscordChannel object
             c = DiscordChannel.objects.filter(channel_id=self.channel_id)
             c['channel_name'] = self.name
             c.save()
+
 
 class DiscordCreateChannel(PlatformAction):
     channel_id = models.BigIntegerField(blank=True)
@@ -204,7 +245,8 @@ class DiscordCreateChannel(PlatformAction):
 
     class Meta:
         permissions = (
-            ('can_execute_discordcreatechannel', 'Can execute discord create channel'),
+            ('can_execute_discordcreatechannel',
+             'Can execute discord create channel'),
         )
 
     def revert(self):
@@ -214,7 +256,8 @@ class DiscordCreateChannel(PlatformAction):
         # Execute action if it didn't originate in the community OR it was previously reverted
         if not self.community_origin or (self.community_origin and self.community_revert):
             guild_id = self.community.team_id
-            channel = self.community.make_call(f"guilds/{guild_id}/channels", {'name': self.name}, method="POST")
+            channel = self.community.make_call(
+                f"guilds/{guild_id}/channels", {'name': self.name}, method="POST")
             self.channel_id = channel['id']
             self.save()
 
@@ -224,6 +267,7 @@ class DiscordCreateChannel(PlatformAction):
                 channel_id=self.channel_id,
                 channel_name=channel['name']
             )
+
 
 class DiscordDeleteChannel(PlatformAction):
     channel_id = models.BigIntegerField()
@@ -236,13 +280,16 @@ class DiscordDeleteChannel(PlatformAction):
 
     class Meta:
         permissions = (
-            ('can_execute_discorddeletechannel', 'Can execute discord delete channel'),
+            ('can_execute_discorddeletechannel',
+             'Can execute discord delete channel'),
         )
 
     def execute(self):
         # Execute action if it didn't originate in the community
         if not self.community_origin:
-            self.community.make_call(f"channels/{self.channel_id}", method='DELETE')
+            self.community.make_call(
+                f"channels/{self.channel_id}", method='DELETE')
+
 
 class DiscordStarterKit(StarterKit):
     def init_kit(self, community, creator_token=None):
@@ -296,15 +343,17 @@ class DiscordStarterKit(StarterKit):
                     c.permissions.add(p1)
 
             if role.user_group == "admins":
-                group = CommunityUser.objects.filter(community = community, is_community_admin = True)
+                group = CommunityUser.objects.filter(
+                    community=community, is_community_admin=True)
                 for user in group:
                     c.user_set.add(user)
             elif role.user_group == "nonadmins":
-                group = CommunityUser.objects.filter(community = community, is_community_admin = False)
+                group = CommunityUser.objects.filter(
+                    community=community, is_community_admin=False)
                 for user in group:
                     c.user_set.add(user)
             elif role.user_group == "all":
-                group = CommunityUser.objects.filter(community = community)
+                group = CommunityUser.objects.filter(community=community)
                 for user in group:
                     c.user_set.add(user)
             elif role.user_group == "creator":
