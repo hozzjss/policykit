@@ -9,10 +9,7 @@ from urllib import parse
 import urllib.request
 import json
 import logging
-import websocket
-import threading
 import datetime
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -37,38 +34,6 @@ session_id = None
 heartbeat_interval = None
 ack_received = True
 sequence_number = None
-
-def get_gateway_uri():
-    # req = urllib.request.Request('https://discord.com/api/gateway')
-    # req.add_header("Content-Type", "application/x-www-form-urlencoded")
-    # req.add_header("User-Agent", "Mozilla/5.0") # yes, this is strange. discord requires it when using urllib for some weird reason
-    # resp = urllib.request.urlopen(req)
-    # res = json.loads(resp.read().decode('utf-8'))
-    return "wss://gateway.discord.gg/"
-
-def on_open(wsapp: websocket.WebSocketApp):
-    def run(*args):
-        global heartbeat_interval, ack_received, sequence_number
-        while True:
-            if heartbeat_interval:
-                time.sleep(heartbeat_interval / 1000)
-
-                # Verify that client received heartbeat ack between attempts at sending heartbeats
-                #if ack_received == False:
-                #    wsapp.close(status=1002)
-                payload = json.dumps({
-                    'op': 1,
-                    'd': sequence_number
-                })
-                # try:
-                wsapp.send(payload)
-                # except websocket._exceptions.WebSocketConnectionClosedException:
-                #     connect_gateway()
-                    
-
-    rt = threading.Thread(target=run)
-    rt.daemon = True
-    rt.start()
 
 def should_create_action(message, type=None):
     if type == None:
@@ -106,9 +71,6 @@ def should_create_action(message, type=None):
         return False
     return True
 
-def handle_ready_event(data):
-    global session_id
-    session_id = data['session_id']
 
 def handle_guild_create_event(data):
     # Populate the DiscordChannel objects
@@ -308,71 +270,6 @@ def handle_event(name, data):
 
 
 
-
-
-def on_message(event, data):
-    global heartbeat_interval, sequence_number, ack_received
-    payload = json.loads(message)
-    op = payload['op']
-    if op == 0: # Opcode 0 Dispatch
-        logger.info(f'Received event named {payload["t"]}')
-        sequence_number = payload['s']
-        handle_event(payload['t'], payload['d'])
-    elif op == 10: # Opcode 10 Hello
-        # Receive heartbeat interval
-        heartbeat_interval = payload['d']['heartbeat_interval']
-        logger.info(f'Received heartbeat of {heartbeat_interval} ms from the Discord gateway')
-
-        # Send an Opcode 2 Identify
-        payload = json.dumps({
-            'op': 2,
-            'd': {
-                'token': DISCORD_BOT_TOKEN,
-                'intents': 1543,
-                'properties': {
-                    '$os': 'linux', # TODO: Replace with system operating system
-                    '$browser': 'disco',
-                    '$device': 'disco'
-                },
-                'compress': False
-            }
-        })
-        if session_id:
-            payload = json.dumps({
-                "op": 6,
-                "d": {
-                    "token": DISCORD_BOT_TOKEN,
-                    "session_id": session_id,
-                    "seq": sequence_number
-                }
-            })
-        
-        wsapp.send(payload)
-        logger.info(f'Sent an Opcode {6 if session_id else 2} Identify to the Discord gateway')
-    elif op == 11: # Opcode 11 Heartbeat ACK
-        ack_received = True
-
-def on_error(wsapp: websocket.WebSocketApp, error):
-    logger.error(f'Websocket error: {error}')
-    
-
-def on_close(wsapp, code, reason):
-    logger.error(f'Connection to Discord gateway closed with error code {code}')
-    
-
-# Open gateway connection
-# def connect_gateway():
-#     wsapp = websocket.WebSocketApp(f'http  ://localhost:8299',
-#         on_message=on_message,
-#         on_error=on_error,
-#         on_close=on_close)
-#     wsapp.on_open = on_open
-#     wst = threading.Thread(target=wsapp.run_forever)
-#     wst.daemon = True
-#     wst.start()
-
-# if DISCORD_CLIENT_ID:
-#     connect_gateway()
 
 def oauth(request):
     state = request.GET.get('state')
