@@ -254,8 +254,8 @@ def handle_event(name, data):
             # know right away when an event is triggered in Discord. Thus, we
             # manually call consider_proposed_actions whenever we have a new
             # proposed action in Discord.
-            from policyengine.tasks import consider_proposed_actions
-            consider_proposed_actions()
+            # from policyengine.tasks import consider_proposed_actions
+            # consider_proposed_actions()
 
         if name == 'MESSAGE_REACTION_ADD':
             action_res = PlatformAction.objects.filter(
