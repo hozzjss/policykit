@@ -110,7 +110,7 @@ class DiscordCommunity(CommunityPlatform):
             logger.error(
                 f"{response.status_code} {response.reason} {response.text}")
             if response.status_code == 429:
-                return handleRateLimiting(res)
+                return handleRateLimiting(response)
             raise Exception(
                 f"{response.status_code} {response.reason} {response.text}")
         if response.content:
