@@ -41,7 +41,7 @@ def should_create_action(message, type=None):
         logger.error('type parameter not specified in should_create_action')
         return False
 
-    if not str(message["channel_id"]) in ALLOWED_CHANNELS:
+    if not str(message["channel_id"]) in ALLOWED_CHANNELS and not message["is_proposal_thread"]:
         logger.debug("ignoring message")
         return
 
@@ -91,8 +91,30 @@ def handle_guild_create_event(data):
     logger.info(f'Populated DiscordChannel objects from GUILD_CREATE event')
 
 
+def handle_thread_channel(data):
+    channel = DiscordChannel.objects.filter(
+        channel_id=data['channel_id'])
+    if not len(channel):
+        DiscordChannel.objects.create(
+            guild_id=data['guild_id'],
+            channel_id=data['channel_id'],
+            channel_name=data['proposal_name']
+        )
+
+
 def handle_message_create_event(data):
+    proposal = PolicykitAddCommunityDoc.objects.filter(
+        data__data_store__contains=data["channel_id"], proposal__status="proposed")
+    is_proposal_thread = proposal.exists()
+
+    if is_proposal_thread and proposal:
+        proposal = proposal[0]
+        data["is_proposal_thread"] = is_proposal_thread
+        data["proposal_name"] = proposal.name
+
     if should_create_action(data, type="MESSAGE_CREATE"):
+        if data["is_proposal_thread"]:
+            handle_thread_channel(data)
         channel = DiscordChannel.objects.filter(
             channel_id=data['channel_id'])[0]
         guild_id = channel.guild_id

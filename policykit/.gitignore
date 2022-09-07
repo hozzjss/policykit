@@ -1,6 +1,6 @@
 *.pyc
 private.py
-db.sqlite3
+*.sqlite3
 .project
 static/*
 .DS_Store
