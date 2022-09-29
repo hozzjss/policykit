@@ -104,8 +104,10 @@ def handle_thread_channel(data):
 
 def handle_message_create_event(data):
     proposal = PolicykitAddCommunityDoc.objects.filter(
-        data__data_store__contains=data["channel_id"], proposal__status="proposed")
+        data__data_store__contains=data["channel_id"], proposal__status="proposed") or PolicykitAddCommunityDoc.objects.filter(
+        community_post=data["channel_id"], proposal__status="proposed")
     is_proposal_thread = proposal.exists()
+    data["is_proposal_thread"] = is_proposal_thread
 
     if is_proposal_thread and proposal:
         proposal = proposal[0]
